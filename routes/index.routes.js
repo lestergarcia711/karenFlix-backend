@@ -1,0 +1,19 @@
+import { Router } from 'express';
+import semver from 'semver';
+
+const router = Router();
+
+router.get('/health', (_req, res) => {
+  const rawVersion = process.env.API_VERSION || '1.0.0';
+  const validVersion = semver.valid(semver.coerce(rawVersion)) || '1.0.0';
+
+  res.status(200).json({
+    ok: true,
+    service: 'KarenFlix Backend API',
+    version: validVersion,
+    status: 'online',
+    timestamp: new Date().toISOString()
+  });
+});
+
+export default router;
