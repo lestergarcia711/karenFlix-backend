@@ -1,0 +1,28 @@
+{
+  "name": "karenflix-backend",
+  "version": "1.0.0",
+  "description": "Backend API para KarenFlix - Plataforma de reseñas y ranking de películas, series y animes geek",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon --quiet app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-validator": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "semver": "^7.6.3",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
