@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import semver from 'semver';
 import authRoutes from './auth.routes.js';
+import categoriaRoutes from './categoria.routes.js';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.get('/health', (_req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/categorias', categoriaRoutes);
 
 export default router;
