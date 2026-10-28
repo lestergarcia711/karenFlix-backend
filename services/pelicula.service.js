@@ -3,6 +3,17 @@ import { CategoriaModel } from '../models/categoria.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export const PeliculaService = {
+  async getApprovedPeliculas() {
+    return PeliculaModel.findAllApproved();
+  },
+
+  async getPeliculasForAdmin(estado = null) {
+    if (estado && !['pendiente', 'aprobada', 'rechazada'].includes(estado)) {
+      throw new AppError("El filtro de estado debe ser 'pendiente', 'aprobada' o 'rechazada'.", 400);
+    }
+    return PeliculaModel.findAllForAdmin(estado);
+  },
+
   async createPelicula({
     titulo,
     descripcion,
@@ -38,6 +49,58 @@ export const PeliculaService = {
       }
       throw error;
     }
+  },
+
+  async reviewPelicula(id, { estado, revisado_por }) {
+    const pelicula = await PeliculaModel.findById(id);
+    if (!pelicula) {
+      throw new AppError('La pelicula o serie solicitada no existe.', 404);
+    }
+
+    return PeliculaModel.updateStatus(id, { estado, revisado_por });
+  },
+
+  async updatePelicula(id, { titulo, descripcion, tipo, categoria_id, anio, imagen_url }) {
+    const currentPelicula = await PeliculaModel.findById(id);
+    if (!currentPelicula) {
+      throw new AppError('La pelicula o serie solicitada no existe.', 404);
+    }
+
+    const categoria = await CategoriaModel.findById(categoria_id);
+    if (!categoria) {
+      throw new AppError('La categoria seleccionada no existe.', 404);
+    }
+
+    const existingWithTitle = await PeliculaModel.findByTitle(titulo);
+    if (existingWithTitle && Number(existingWithTitle.id) !== Number(id)) {
+      throw new AppError('Ya existe otra pelicula o serie registrada con ese titulo.', 409);
+    }
+
+    try {
+      return await PeliculaModel.update(id, {
+        titulo,
+        descripcion,
+        tipo: tipo || currentPelicula.tipo,
+        categoria_id,
+        anio,
+        imagen_url: imagen_url !== undefined ? imagen_url : currentPelicula.imagen_url
+      });
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new AppError('Ya existe otra pelicula o serie registrada con ese titulo.', 409);
+      }
+      throw error;
+    }
+  },
+
+  async deletePelicula(id) {
+    const currentPelicula = await PeliculaModel.findById(id);
+    if (!currentPelicula) {
+      throw new AppError('La pelicula o serie solicitada no existe.', 404);
+    }
+
+    await PeliculaModel.remove(id);
+    return currentPelicula;
   }
 };
 

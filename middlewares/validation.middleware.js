@@ -120,3 +120,68 @@ export const validatePelicula = [
     .withMessage('La URL de la imagen no puede superar los 500 caracteres.'),
   handleValidationErrors
 ];
+
+export const validatePeliculaId = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('El identificador de la pelicula debe ser un numero entero positivo.')
+    .toInt(),
+  handleValidationErrors
+];
+
+export const validatePeliculaStatus = [
+  body('estado')
+    .trim()
+    .notEmpty()
+    .withMessage('El estado de revision es obligatorio.')
+    .isIn(['aprobada', 'rechazada'])
+    .withMessage("El estado de revision debe ser 'aprobada' o 'rechazada'."),
+  handleValidationErrors
+];
+
+export const validateUpdatePelicula = [
+  body('titulo')
+    .trim()
+    .notEmpty()
+    .withMessage('El titulo de la pelicula o serie es obligatorio.')
+    .isLength({ min: 1, max: 150 })
+    .withMessage('El titulo debe tener entre 1 y 150 caracteres.')
+    .custom(async (titulo, { req }) => {
+      const existing = await PeliculaModel.findByTitle(titulo);
+      if (existing && Number(existing.id) !== Number(req.params.id)) {
+        throw new Error('Ya existe otra pelicula o serie registrada con ese titulo.');
+      }
+      return true;
+    }),
+  body('descripcion')
+    .trim()
+    .notEmpty()
+    .withMessage('La descripcion es obligatoria.'),
+  body('tipo')
+    .optional()
+    .trim()
+    .isIn(['pelicula', 'serie', 'anime'])
+    .withMessage("El tipo debe ser 'pelicula', 'serie' o 'anime'."),
+  body('categoria_id')
+    .customSanitizer((value, { req }) => value ?? req.body.categoria)
+    .notEmpty()
+    .withMessage('La categoria es obligatoria.')
+    .isInt({ min: 1 })
+    .withMessage('El identificador de la categoria debe ser un numero entero positivo.')
+    .toInt(),
+  body('anio')
+    .notEmpty()
+    .withMessage('El anio de estreno es obligatorio.')
+    .isInt({ min: 1888, max: 2100 })
+    .withMessage('El anio debe ser un numero entero valido entre 1888 y 2100.')
+    .toInt(),
+  body('imagen_url')
+    .customSanitizer((value, { req }) => value ?? req.body.imagen ?? null)
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isURL()
+    .withMessage('La imagen debe ser una URL valida.')
+    .isLength({ max: 500 })
+    .withMessage('La URL de la imagen no puede superar los 500 caracteres.'),
+  handleValidationErrors
+];
