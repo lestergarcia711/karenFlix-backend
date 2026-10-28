@@ -1,32 +1,74 @@
 import pool from '../config/db.js';
 
 export const PeliculaModel = {
-  async findAllApproved() {
-    const [rows] = await pool.execute(
-      `SELECT 
-         p.id,
-         p.titulo,
-         p.descripcion,
-         p.tipo,
-         p.categoria_id,
-         c.nombre AS categoria_nombre,
-         p.anio,
-         p.imagen_url,
-         p.estado,
-         p.creado_por,
-         u.nombre AS creador_nombre,
-         p.promedio_calificacion,
-         p.total_resenas,
-         p.puntaje_ranking,
-         p.fecha_creacion,
-         p.fecha_actualizacion
-       FROM peliculas p
-       INNER JOIN categorias c ON p.categoria_id = c.id
-       INNER JOIN usuarios u ON p.creado_por = u.id
-       WHERE p.estado = 'aprobada'
-       ORDER BY p.fecha_creacion DESC`
-    );
+  async findAllApproved({ categoria_id = null, tipo = null, busqueda = null, orden = 'recientes' } = {}) {
+    let query = `
+      SELECT 
+        p.id,
+        p.titulo,
+        p.descripcion,
+        p.tipo,
+        p.categoria_id,
+        c.nombre AS categoria_nombre,
+        p.anio,
+        p.imagen_url,
+        p.estado,
+        p.creado_por,
+        u.nombre AS creador_nombre,
+        p.promedio_calificacion,
+        p.total_resenas,
+        p.puntaje_ranking,
+        COALESCE(
+          (SELECT SUM(r.total_likes + r.total_dislikes) FROM resenas r WHERE r.pelicula_id = p.id),
+          0
+        ) AS total_interacciones,
+        p.fecha_creacion,
+        p.fecha_actualizacion
+      FROM peliculas p
+      INNER JOIN categorias c ON p.categoria_id = c.id
+      INNER JOIN usuarios u ON p.creado_por = u.id
+      WHERE p.estado = 'aprobada'
+    `;
+    const params = [];
+
+    if (categoria_id) {
+      query += ` AND p.categoria_id = ?`;
+      params.push(Number(categoria_id));
+    }
+
+    if (tipo) {
+      query += ` AND p.tipo = ?`;
+      params.push(tipo);
+    }
+
+    if (busqueda) {
+      query += ` AND p.titulo LIKE ?`;
+      params.push(`%${busqueda.trim()}%`);
+    }
+
+    if (orden === 'ranking') {
+      query += ` ORDER BY p.puntaje_ranking DESC, p.promedio_calificacion DESC, p.total_resenas DESC, p.fecha_creacion DESC`;
+    } else if (orden === 'popularidad') {
+      query += ` ORDER BY p.total_resenas DESC, total_interacciones DESC, p.puntaje_ranking DESC, p.fecha_creacion DESC`;
+    } else {
+      query += ` ORDER BY p.fecha_creacion DESC`;
+    }
+
+    const [rows] = await pool.execute(query, params);
     return rows;
+  },
+
+  async findRanking({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
+    const peliculas = await this.findAllApproved({
+      categoria_id,
+      orden: orden === 'popularidad' ? 'popularidad' : 'ranking'
+    });
+
+    const limitNum = Math.min(Math.max(Number(limite) || 20, 1), 100);
+    return peliculas.slice(0, limitNum).map((pelicula, index) => ({
+      posicion: index + 1,
+      ...pelicula
+    }));
   },
 
   async findAllForAdmin(estado = null) {
