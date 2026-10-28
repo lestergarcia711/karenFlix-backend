@@ -1,10 +1,38 @@
 import { PeliculaModel } from '../models/pelicula.model.js';
 import { CategoriaModel } from '../models/categoria.model.js';
+import { ResenaModel } from '../models/resena.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export const PeliculaService = {
-  async getApprovedPeliculas() {
-    return PeliculaModel.findAllApproved();
+  async getApprovedPeliculas({ categoria_id, tipo, busqueda, orden } = {}) {
+    return PeliculaModel.findAllApproved({
+      categoria_id,
+      tipo,
+      busqueda,
+      orden: orden || 'recientes'
+    });
+  },
+
+  async getRankingPeliculas({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
+    return PeliculaModel.findRanking({
+      orden: orden || 'ranking',
+      categoria_id,
+      limite
+    });
+  },
+
+  async getPeliculaDetail(id) {
+    const pelicula = await PeliculaModel.findById(id);
+    if (!pelicula || pelicula.estado !== 'aprobada') {
+      throw new AppError('La pelicula o serie solicitada no existe o no esta disponible.', 404);
+    }
+
+    const resenas = await ResenaModel.findAllByPelicula(id);
+
+    return {
+      pelicula,
+      resenas
+    };
   },
 
   async getPeliculasForAdmin(estado = null) {

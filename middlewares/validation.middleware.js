@@ -1,4 +1,4 @@
-import { body, param, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 import { AppError } from '../utils/AppError.js';
 import { PeliculaModel } from '../models/pelicula.model.js';
 
@@ -222,5 +222,30 @@ export const validateReaccion = [
     .withMessage('El tipo de reaccion es obligatorio.')
     .isIn(['like', 'dislike'])
     .withMessage("El tipo de reaccion debe ser 'like' o 'dislike'."),
+  handleValidationErrors
+];
+
+export const validatePeliculaQuery = [
+  query('categoria_id')
+    .customSanitizer((value, { req }) => value ?? req.query.categoria)
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('El filtro categoria_id debe ser un numero entero positivo.')
+    .toInt(),
+  query('tipo')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isIn(['pelicula', 'serie', 'anime'])
+    .withMessage("El filtro tipo debe ser 'pelicula', 'serie' o 'anime'."),
+  query('orden')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isIn(['ranking', 'popularidad', 'recientes'])
+    .withMessage("El parametro orden debe ser 'ranking', 'popularidad' o 'recientes'."),
+  query('limite')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('El parametro limite debe ser un numero entero entre 1 y 100.')
+    .toInt(),
   handleValidationErrors
 ];
