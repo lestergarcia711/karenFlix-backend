@@ -185,3 +185,32 @@ export const validateUpdatePelicula = [
     .withMessage('La URL de la imagen no puede superar los 500 caracteres.'),
   handleValidationErrors
 ];
+
+export const validateResenaId = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('El identificador de la resena debe ser un numero entero positivo.')
+    .toInt(),
+  handleValidationErrors
+];
+
+export const validateResena = [
+  body('titulo')
+    .trim()
+    .notEmpty()
+    .withMessage('El titulo de la resena es obligatorio.')
+    .isLength({ min: 2, max: 100 })
+    .withMessage('El titulo de la resena debe tener entre 2 y 100 caracteres.'),
+  body('comentario')
+    .trim()
+    .notEmpty()
+    .withMessage('El comentario de la resena es obligatorio.'),
+  body('calificacion')
+    .customSanitizer((value, { req }) => value ?? req.body.nota)
+    .notEmpty()
+    .withMessage('La calificacion es obligatoria.')
+    .isInt({ min: 1, max: 10 })
+    .withMessage('La calificacion debe ser un numero entero entre 1 y 10.')
+    .toInt(),
+  handleValidationErrors
+];
