@@ -7,20 +7,25 @@ import {
   updatePelicula,
   deletePelicula
 } from '../controllers/pelicula.controller.js';
+import {
+  getResenasByPelicula,
+  createResena
+} from '../controllers/resena.controller.js';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware.js';
 import {
   validatePelicula,
   validatePeliculaId,
   validatePeliculaStatus,
-  validateUpdatePelicula
+  validateUpdatePelicula,
+  validateResena
 } from '../middlewares/validation.middleware.js';
 
 const router = Router();
 
-// HU-08: Lista publica (solo peliculas aprobadas aparecen en la lista publica)
+// Lista publica (solo peliculas aprobadas apareceran)
 router.get('/', getApprovedPeliculas);
 
-// HU-08: Listado para panel de administrador (todas o filtradas por ?estado=pendiente|aprobada|rechazada)
+// Listado para panel de administrador (todas o filtradas por ?estado=pendiente|aprobada|rechazada)
 router.get(
   '/admin',
   authenticateJWT,
@@ -28,10 +33,14 @@ router.get(
   getPeliculasForAdmin
 );
 
-// HU-07: Cualquier usuario autenticado puede proponer una pelicula o serie (queda en estado 'pendiente')
+// Cualquier usuario autenticado puede proponer una pelicula o serie (queda en estado 'pendiente')
 router.post('/', authenticateJWT, validatePelicula, createPelicula);
 
-// HU-08: Solo el administrador puede aprobar o rechazar peliculas enviadas
+// Consultar y escribir resenas sobre una pelicula (con transaccion MySQL y actualizacion de nota)
+router.get('/:id/resenas', validatePeliculaId, getResenasByPelicula);
+router.post('/:id/resenas', authenticateJWT, validatePeliculaId, validateResena, createResena);
+
+// Solo el administrador puede aprobar o rechazar peliculas enviadas
 router.patch(
   '/:id/estado',
   authenticateJWT,
@@ -41,7 +50,7 @@ router.patch(
   reviewPelicula
 );
 
-// HU-09: Solo el administrador puede editar o eliminar peliculas
+// Solo el administrador puede editar o eliminar peliculas
 router.put(
   '/:id',
   authenticateJWT,

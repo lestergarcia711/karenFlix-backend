@@ -3,6 +3,7 @@ import semver from 'semver';
 import authRoutes from './auth.routes.js';
 import categoriaRoutes from './categoria.routes.js';
 import peliculaRoutes from './pelicula.routes.js';
+import resenaRoutes from './resena.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.get('/health', (_req, res) => {
 router.use('/auth', authRoutes);
 router.use('/categorias', categoriaRoutes);
 router.use('/peliculas', peliculaRoutes);
+router.use('/resenas', resenaRoutes);
 
 export default router;
