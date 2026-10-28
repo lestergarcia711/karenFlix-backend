@@ -1,4 +1,4 @@
-import { body, validationResult } from 'express-validator';
+import { body, param, validationResult } from 'express-validator';
 import { AppError } from '../utils/AppError.js';
 
 export const handleValidationErrors = (req, _res, next) => {
@@ -48,5 +48,27 @@ export const validateLogin = [
   body('contrasena')
     .notEmpty()
     .withMessage('La contrasena es obligatoria.'),
+  handleValidationErrors
+];
+
+export const validateCategoryId = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('El identificador de la categoria debe ser un numero entero positivo.'),
+  handleValidationErrors
+];
+
+export const validateCategory = [
+  body('nombre')
+    .trim()
+    .notEmpty()
+    .withMessage('El nombre de la categoria es obligatorio.')
+    .isLength({ min: 2, max: 50 })
+    .withMessage('El nombre de la categoria debe tener entre 2 y 50 caracteres.'),
+  body('descripcion')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('La descripcion no puede superar los 255 caracteres.'),
   handleValidationErrors
 ];
