@@ -214,3 +214,13 @@ export const validateResena = [
     .toInt(),
   handleValidationErrors
 ];
+
+export const validateReaccion = [
+  body('tipo')
+    .trim()
+    .notEmpty()
+    .withMessage('El tipo de reaccion es obligatorio.')
+    .isIn(['like', 'dislike'])
+    .withMessage("El tipo de reaccion debe ser 'like' o 'dislike'."),
+  handleValidationErrors
+];
