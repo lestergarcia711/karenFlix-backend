@@ -1,5 +1,6 @@
 import { body, param, validationResult } from 'express-validator';
 import { AppError } from '../utils/AppError.js';
+import { PeliculaModel } from '../models/pelicula.model.js';
 
 export const handleValidationErrors = (req, _res, next) => {
   const errors = validationResult(req);
@@ -70,5 +71,52 @@ export const validateCategory = [
     .trim()
     .isLength({ max: 255 })
     .withMessage('La descripcion no puede superar los 255 caracteres.'),
+  handleValidationErrors
+];
+
+export const validatePelicula = [
+  body('titulo')
+    .trim()
+    .notEmpty()
+    .withMessage('El titulo de la pelicula o serie es obligatorio.')
+    .isLength({ min: 1, max: 150 })
+    .withMessage('El titulo debe tener entre 1 y 150 caracteres.')
+    .custom(async (titulo) => {
+      const existing = await PeliculaModel.findByTitle(titulo);
+      if (existing) {
+        throw new Error('Ya existe una pelicula o serie registrada con ese titulo.');
+      }
+      return true;
+    }),
+  body('descripcion')
+    .trim()
+    .notEmpty()
+    .withMessage('La descripcion es obligatoria.'),
+  body('tipo')
+    .optional()
+    .trim()
+    .isIn(['pelicula', 'serie', 'anime'])
+    .withMessage("El tipo debe ser 'pelicula', 'serie' o 'anime'."),
+  body('categoria_id')
+    .customSanitizer((value, { req }) => value ?? req.body.categoria)
+    .notEmpty()
+    .withMessage('La categoria es obligatoria.')
+    .isInt({ min: 1 })
+    .withMessage('El identificador de la categoria debe ser un numero entero positivo.')
+    .toInt(),
+  body('anio')
+    .notEmpty()
+    .withMessage('El anio de estreno es obligatorio.')
+    .isInt({ min: 1888, max: 2100 })
+    .withMessage('El anio debe ser un numero entero valido entre 1888 y 2100.')
+    .toInt(),
+  body('imagen_url')
+    .customSanitizer((value, { req }) => value ?? req.body.imagen ?? null)
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isURL()
+    .withMessage('La imagen debe ser una URL valida.')
+    .isLength({ max: 500 })
+    .withMessage('La URL de la imagen no puede superar los 500 caracteres.'),
   handleValidationErrors
 ];
