@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   getApprovedPeliculas,
+  getRankingPeliculas,
+  getPeliculaById,
   getPeliculasForAdmin,
   createPelicula,
   reviewPelicula,
@@ -15,6 +17,7 @@ import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware.
 import {
   validatePelicula,
   validatePeliculaId,
+  validatePeliculaQuery,
   validatePeliculaStatus,
   validateUpdatePelicula,
   validateResena
@@ -22,10 +25,13 @@ import {
 
 const router = Router();
 
-// Lista publica (solo peliculas aprobadas apareceran)
-router.get('/', getApprovedPeliculas);
+// HU-08, HU-13 y HU-14: Lista publica con filtro por categoria y orden por ranking o popularidad
+router.get('/', validatePeliculaQuery, getApprovedPeliculas);
 
-// Listado para panel de administrador (todas o filtradas por ?estado=pendiente|aprobada|rechazada)
+// HU-13: Ranking de peliculas ordenadas de mejor a peor (por ranking ponderado o popularidad)
+router.get('/ranking', validatePeliculaQuery, getRankingPeliculas);
+
+// HU-08: Listado para panel de administrador (todas o filtradas por ?estado=pendiente|aprobada|rechazada)
 router.get(
   '/admin',
   authenticateJWT,
@@ -33,14 +39,17 @@ router.get(
   getPeliculasForAdmin
 );
 
-// Cualquier usuario autenticado puede proponer una pelicula o serie (queda en estado 'pendiente')
+// HU-14: Vista de detalle de pelicula con su informacion y resenas asociadas
+router.get('/:id', validatePeliculaId, getPeliculaById);
+
+// HU-07: Cualquier usuario autenticado puede proponer una pelicula o serie (queda en estado 'pendiente')
 router.post('/', authenticateJWT, validatePelicula, createPelicula);
 
-// Consultar y escribir resenas sobre una pelicula (con transaccion MySQL y actualizacion de nota)
+// HU-10: Consultar y escribir resenas sobre una pelicula (con transaccion MySQL y actualizacion de nota)
 router.get('/:id/resenas', validatePeliculaId, getResenasByPelicula);
 router.post('/:id/resenas', authenticateJWT, validatePeliculaId, validateResena, createResena);
 
-// Solo el administrador puede aprobar o rechazar peliculas enviadas
+// HU-08: Solo el administrador puede aprobar o rechazar peliculas enviadas
 router.patch(
   '/:id/estado',
   authenticateJWT,
@@ -50,7 +59,7 @@ router.patch(
   reviewPelicula
 );
 
-// Solo el administrador puede editar o eliminar peliculas
+// HU-09: Solo el administrador puede editar o eliminar peliculas
 router.put(
   '/:id',
   authenticateJWT,

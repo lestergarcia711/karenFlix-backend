@@ -1,13 +1,52 @@
 import { PeliculaService } from '../services/pelicula.service.js';
 
-export const getApprovedPeliculas = async (_req, res, next) => {
+export const getApprovedPeliculas = async (req, res, next) => {
   try {
-    const peliculas = await PeliculaService.getApprovedPeliculas();
+    const { categoria_id, categoria, tipo, busqueda, orden } = req.query;
+    const peliculas = await PeliculaService.getApprovedPeliculas({
+      categoria_id: categoria_id ?? categoria,
+      tipo,
+      busqueda,
+      orden
+    });
     res.status(200).json({
       ok: true,
       data: {
         peliculas
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRankingPeliculas = async (req, res, next) => {
+  try {
+    const { orden, categoria_id, categoria, limite } = req.query;
+    const ranking = await PeliculaService.getRankingPeliculas({
+      orden,
+      categoria_id: categoria_id ?? categoria,
+      limite
+    });
+    res.status(200).json({
+      ok: true,
+      data: {
+        criterio: orden === 'popularidad' ? 'popularidad' : 'ranking',
+        ranking
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPeliculaById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const detalle = await PeliculaService.getPeliculaDetail(id);
+    res.status(200).json({
+      ok: true,
+      data: detalle
     });
   } catch (error) {
     next(error);
