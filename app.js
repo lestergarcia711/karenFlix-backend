@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import semver from 'semver';
 import { testConnection } from './config/db.js';
+import passport from './config/passport.js';
 import { apiRateLimiter } from './middlewares/rateLimiter.middleware.js';
 import { notFoundHandler, errorHandler } from './middlewares/error.middleware.js';
 import indexRoutes from './routes/index.routes.js';
@@ -28,6 +29,9 @@ app.use(apiRateLimiter);
 // Parseo del cuerpo de las peticiones
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Inicializacion de Passport (JWT)
+app.use(passport.initialize());
 
 // Rutas base versionadas con semver
 app.use(`/api/v${API_MAJOR}`, indexRoutes);
