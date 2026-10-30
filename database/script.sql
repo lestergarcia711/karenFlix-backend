@@ -83,3 +83,16 @@ CREATE TABLE IF NOT EXISTS reacciones_resenas(
   CONSTRAINT fk_reacciones_resena FOREIGN KEY(resena_id) REFERENCES resenas(id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_reacciones_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ON UPDATE CASCADE
 )ENGINE=InnoDB;
+
+UPDATE usuarios SET rol = 'administrador' WHERE correo = 'juan@gmail.com';
+
+INSERT INTO categorias (nombre) VALUES 
+('Acción'),
+('Comedia'),
+('Drama'),
+('Ciencia Ficción'),
+('Terror'),
+('Romance'),
+('Animación'),
+('Fantasía'),
+('Documental');
