@@ -1,7 +1,36 @@
 import pool from '../config/db.js';
 
-export const ResenaModel = {
-  async recalculatePeliculaStats(connection, pelicula_id) {
+export class ResenaModel {
+  #pool;
+  #likeWeight;
+  #recencyDaysWindow;
+
+  constructor(dbPool = pool) {
+    this.#pool = dbPool;
+    this.#likeWeight = 0.15;
+    this.#recencyDaysWindow = 30.0;
+  }
+
+  #getFirstRowOrNull(rows) {
+    return rows[0] || null;
+  }
+
+  async #executeTransaction(work) {
+    const connection = await this.#pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const result = await work(connection);
+      await connection.commit();
+      return result;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async #updatePeliculaMetrics(connection, pelicula_id) {
     const [statsRows] = await connection.execute(
       `SELECT 
          COUNT(*) AS total_resenas,
@@ -10,8 +39,8 @@ export const ResenaModel = {
            ROUND(
              AVG(
                calificacion
-               + ((CAST(total_likes AS SIGNED) - CAST(total_dislikes AS SIGNED)) * 0.15)
-               + (1.0 / (1.0 + GREATEST(TIMESTAMPDIFF(DAY, fecha_creacion, NOW()), 0) / 30.0))
+               + ((CAST(total_likes AS SIGNED) - CAST(total_dislikes AS SIGNED)) * ${this.#likeWeight})
+               + (1.0 / (1.0 + GREATEST(TIMESTAMPDIFF(DAY, fecha_creacion, NOW()), 0) / ${this.#recencyDaysWindow}))
              ),
              4
            ),
@@ -32,9 +61,13 @@ export const ResenaModel = {
        WHERE id = ?`,
       [promedio_calificacion, total_resenas, puntaje_ranking, pelicula_id]
     );
-  },
+  }
 
-  async findById(id, connection = pool) {
+  async recalculatePeliculaStats(connection, pelicula_id) {
+    return this.#updatePeliculaMetrics(connection, pelicula_id);
+  }
+
+  async findById(id, connection = this.#pool) {
     const [rows] = await connection.execute(
       `SELECT 
          r.id,
@@ -56,22 +89,22 @@ export const ResenaModel = {
        LIMIT 1`,
       [id]
     );
-    return rows[0] || null;
-  },
+    return this.#getFirstRowOrNull(rows);
+  }
 
   async findByPeliculaAndUsuario(pelicula_id, usuario_id) {
-    const [rows] = await pool.execute(
+    const [rows] = await this.#pool.execute(
       `SELECT id, pelicula_id, usuario_id
        FROM resenas
        WHERE pelicula_id = ? AND usuario_id = ?
        LIMIT 1`,
       [pelicula_id, usuario_id]
     );
-    return rows[0] || null;
-  },
+    return this.#getFirstRowOrNull(rows);
+  }
 
   async findAllByPelicula(pelicula_id) {
-    const [rows] = await pool.execute(
+    const [rows] = await this.#pool.execute(
       `SELECT 
          r.id,
          r.pelicula_id,
@@ -91,38 +124,24 @@ export const ResenaModel = {
       [pelicula_id]
     );
     return rows;
-  },
+  }
 
   async createWithTransaction({ pelicula_id, usuario_id, titulo, comentario, calificacion }) {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-
+    return this.#executeTransaction(async (connection) => {
       const [result] = await connection.execute(
         `INSERT INTO resenas (pelicula_id, usuario_id, titulo, comentario, calificacion)
          VALUES (?, ?, ?, ?, ?)`,
         [pelicula_id, usuario_id, titulo, comentario, calificacion]
       );
 
-      await this.recalculatePeliculaStats(connection, pelicula_id);
+      await this.#updatePeliculaMetrics(connection, pelicula_id);
 
-      const nuevaResena = await this.findById(result.insertId, connection);
-
-      await connection.commit();
-      return nuevaResena;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
-  },
+      return this.findById(result.insertId, connection);
+    });
+  }
 
   async updateWithTransaction(id, { titulo, comentario, calificacion }) {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-
+    return this.#executeTransaction(async (connection) => {
       const resenaActual = await this.findById(id, connection);
 
       await connection.execute(
@@ -132,41 +151,25 @@ export const ResenaModel = {
         [titulo, comentario, calificacion, id]
       );
 
-      await this.recalculatePeliculaStats(connection, resenaActual.pelicula_id);
+      await this.#updatePeliculaMetrics(connection, resenaActual.pelicula_id);
 
-      const resenaActualizada = await this.findById(id, connection);
-
-      await connection.commit();
-      return resenaActualizada;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
-  },
+      return this.findById(id, connection);
+    });
+  }
 
   async removeWithTransaction(id, pelicula_id) {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-
+    return this.#executeTransaction(async (connection) => {
       await connection.execute(
         `DELETE FROM resenas
          WHERE id = ?`,
         [id]
       );
 
-      await this.recalculatePeliculaStats(connection, pelicula_id);
-
-      await connection.commit();
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+      await this.#updatePeliculaMetrics(connection, pelicula_id);
+    });
   }
-};
+}
+
+export const resenaModel = new ResenaModel();
 
 export default ResenaModel;

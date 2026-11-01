@@ -1,12 +1,52 @@
 import { Router } from 'express';
-import { register, login, getProfile } from '../controllers/auth.controller.js';
-import { validateRegister, validateLogin } from '../middlewares/validation.middleware.js';
-import { authenticateJWT } from '../middlewares/auth.middleware.js';
+import { AuthController, authController } from '../controllers/auth.controller.js';
+import { ValidationMiddleware, validationMiddleware } from '../middlewares/validation.middleware.js';
+import { AuthMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
 
-const router = Router();
+export class AuthRoutes {
+  #router;
+  #authController;
+  #validationMiddleware;
+  #authMiddleware;
 
-router.post('/register', validateRegister, register);
-router.post('/login', validateLogin, login);
-router.get('/profile', authenticateJWT, getProfile);
+  constructor(
+    authControllerInstance = authController || new AuthController(),
+    validationMiddlewareInstance = validationMiddleware || new ValidationMiddleware(),
+    authMiddlewareInstance = authMiddleware || new AuthMiddleware()
+  ) {
+    this.#router = Router();
+    this.#authController = authControllerInstance;
+    this.#validationMiddleware = validationMiddlewareInstance;
+    this.#authMiddleware = authMiddlewareInstance;
 
-export default router;
+    this.#initializeRoutes();
+  }
+
+  #initializeRoutes() {
+    this.#router.post(
+      '/register',
+      this.#validationMiddleware.getRegisterValidator(),
+      this.#authController.register
+    );
+
+    this.#router.post(
+      '/login',
+      this.#validationMiddleware.getLoginValidator(),
+      this.#authController.login
+    );
+
+    this.#router.get(
+      '/profile',
+      this.#authMiddleware.authenticateJWT,
+      this.#authController.getProfile
+    );
+  }
+
+  getRouter() {
+    return this.#router;
+  }
+}
+
+export const authRoutes = new AuthRoutes();
+
+export default authRoutes.getRouter();

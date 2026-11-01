@@ -1,46 +1,107 @@
-import { PeliculaModel } from '../models/pelicula.model.js';
-import { CategoriaModel } from '../models/categoria.model.js';
-import { ResenaModel } from '../models/resena.model.js';
+import { PeliculaModel, peliculaModel } from '../models/pelicula.model.js';
+import { CategoriaModel, categoriaModel } from '../models/categoria.model.js';
+import { ResenaModel, resenaModel } from '../models/resena.model.js';
 import { AppError } from '../utils/AppError.js';
 
-export const PeliculaService = {
-  async getApprovedPeliculas({ categoria_id, tipo, busqueda, orden } = {}) {
-    return PeliculaModel.findAllApproved({
-      categoria_id,
-      tipo,
-      busqueda,
-      orden: orden || 'recientes'
-    });
-  },
+export class PeliculaService {
+  #peliculaModel;
+  #categoriaModel;
+  #resenaModel;
+  #estadosValidos;
+  #defaultOrden;
+  #defaultRankingOrden;
+  #defaultTipo;
 
-  async getRankingPeliculas({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
-    return PeliculaModel.findRanking({
-      orden: orden || 'ranking',
-      categoria_id,
-      limite
-    });
-  },
+  constructor(
+    peliculaModelInstance = peliculaModel || new PeliculaModel(),
+    categoriaModelInstance = categoriaModel || new CategoriaModel(),
+    resenaModelInstance = resenaModel || new ResenaModel()
+  ) {
+    this.#peliculaModel = peliculaModelInstance;
+    this.#categoriaModel = categoriaModelInstance;
+    this.#resenaModel = resenaModelInstance;
+    this.#estadosValidos = ['pendiente', 'aprobada', 'rechazada'];
+    this.#defaultOrden = 'recientes';
+    this.#defaultRankingOrden = 'ranking';
+    this.#defaultTipo = 'pelicula';
+  }
 
-  async getPeliculaDetail(id) {
-    const pelicula = await PeliculaModel.findById(id);
-    if (!pelicula || pelicula.estado !== 'aprobada') {
+  async #findPeliculaOrFail(id, onlyApproved = false) {
+    const pelicula = await this.#peliculaModel.findById(id);
+    if (!pelicula) {
+      const msg = onlyApproved
+        ? 'La pelicula o serie solicitada no existe o no esta disponible.'
+        : 'La pelicula o serie solicitada no existe.';
+      throw new AppError(msg, 404);
+    }
+
+    if (onlyApproved && pelicula.estado !== 'aprobada') {
       throw new AppError('La pelicula o serie solicitada no existe o no esta disponible.', 404);
     }
 
-    const resenas = await ResenaModel.findAllByPelicula(id);
+    return pelicula;
+  }
+
+  async #ensureCategoriaExists(categoria_id) {
+    const categoria = await this.#categoriaModel.findById(categoria_id);
+    if (!categoria) {
+      throw new AppError('La categoria seleccionada no existe.', 404);
+    }
+    return categoria;
+  }
+
+  async #ensureUniqueTitle(titulo, excludeId = null) {
+    const existing = await this.#peliculaModel.findByTitle(titulo);
+    if (!existing) {
+      return;
+    }
+
+    if (excludeId === null) {
+      throw new AppError('Ya existe una pelicula o serie registrada con ese titulo.', 409);
+    }
+
+    if (Number(existing.id) !== Number(excludeId)) {
+      throw new AppError('Ya existe otra pelicula o serie registrada con ese titulo.', 409);
+    }
+  }
+
+  #validateEstadoFilter(estado) {
+    if (estado && !this.#estadosValidos.includes(estado)) {
+      throw new AppError("El filtro de estado debe ser 'pendiente', 'aprobada' o 'rechazada'.", 400);
+    }
+  }
+
+  async getApprovedPeliculas({ categoria_id, tipo, busqueda, orden } = {}) {
+    return this.#peliculaModel.findAllApproved({
+      categoria_id,
+      tipo,
+      busqueda,
+      orden: orden || this.#defaultOrden
+    });
+  }
+
+  async getRankingPeliculas({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
+    return this.#peliculaModel.findRanking({
+      orden: orden || this.#defaultRankingOrden,
+      categoria_id,
+      limite
+    });
+  }
+
+  async getPeliculaDetail(id) {
+    const pelicula = await this.#findPeliculaOrFail(id, true);
+    const resenas = await this.#resenaModel.findAllByPelicula(id);
 
     return {
       pelicula,
       resenas
     };
-  },
+  }
 
   async getPeliculasForAdmin(estado = null) {
-    if (estado && !['pendiente', 'aprobada', 'rechazada'].includes(estado)) {
-      throw new AppError("El filtro de estado debe ser 'pendiente', 'aprobada' o 'rechazada'.", 400);
-    }
-    return PeliculaModel.findAllForAdmin(estado);
-  },
+    this.#validateEstadoFilter(estado);
+    return this.#peliculaModel.findAllForAdmin(estado);
+  }
 
   async createPelicula({
     titulo,
@@ -51,21 +112,14 @@ export const PeliculaService = {
     imagen_url = null,
     creado_por
   }) {
-    const categoria = await CategoriaModel.findById(categoria_id);
-    if (!categoria) {
-      throw new AppError('La categoria seleccionada no existe.', 404);
-    }
-
-    const existingTitle = await PeliculaModel.findByTitle(titulo);
-    if (existingTitle) {
-      throw new AppError('Ya existe una pelicula o serie registrada con ese titulo.', 409);
-    }
+    await this.#ensureCategoriaExists(categoria_id);
+    await this.#ensureUniqueTitle(titulo);
 
     try {
-      return await PeliculaModel.create({
+      return await this.#peliculaModel.create({
         titulo,
         descripcion,
-        tipo: tipo || 'pelicula',
+        tipo: tipo || this.#defaultTipo,
         categoria_id,
         anio,
         imagen_url: imagen_url || null,
@@ -77,35 +131,20 @@ export const PeliculaService = {
       }
       throw error;
     }
-  },
+  }
 
   async reviewPelicula(id, { estado, revisado_por }) {
-    const pelicula = await PeliculaModel.findById(id);
-    if (!pelicula) {
-      throw new AppError('La pelicula o serie solicitada no existe.', 404);
-    }
-
-    return PeliculaModel.updateStatus(id, { estado, revisado_por });
-  },
+    await this.#findPeliculaOrFail(id);
+    return this.#peliculaModel.updateStatus(id, { estado, revisado_por });
+  }
 
   async updatePelicula(id, { titulo, descripcion, tipo, categoria_id, anio, imagen_url }) {
-    const currentPelicula = await PeliculaModel.findById(id);
-    if (!currentPelicula) {
-      throw new AppError('La pelicula o serie solicitada no existe.', 404);
-    }
-
-    const categoria = await CategoriaModel.findById(categoria_id);
-    if (!categoria) {
-      throw new AppError('La categoria seleccionada no existe.', 404);
-    }
-
-    const existingWithTitle = await PeliculaModel.findByTitle(titulo);
-    if (existingWithTitle && Number(existingWithTitle.id) !== Number(id)) {
-      throw new AppError('Ya existe otra pelicula o serie registrada con ese titulo.', 409);
-    }
+    const currentPelicula = await this.#findPeliculaOrFail(id);
+    await this.#ensureCategoriaExists(categoria_id);
+    await this.#ensureUniqueTitle(titulo, id);
 
     try {
-      return await PeliculaModel.update(id, {
+      return await this.#peliculaModel.update(id, {
         titulo,
         descripcion,
         tipo: tipo || currentPelicula.tipo,
@@ -119,17 +158,15 @@ export const PeliculaService = {
       }
       throw error;
     }
-  },
+  }
 
   async deletePelicula(id) {
-    const currentPelicula = await PeliculaModel.findById(id);
-    if (!currentPelicula) {
-      throw new AppError('La pelicula o serie solicitada no existe.', 404);
-    }
-
-    await PeliculaModel.remove(id);
+    const currentPelicula = await this.#findPeliculaOrFail(id);
+    await this.#peliculaModel.remove(id);
     return currentPelicula;
   }
-};
+}
+
+export const peliculaService = new PeliculaService();
 
 export default PeliculaService;

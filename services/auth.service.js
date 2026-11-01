@@ -1,43 +1,74 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { UsuarioModel } from '../models/usuario.model.js';
+import { UsuarioModel, usuarioModel } from '../models/usuario.model.js';
 import { AppError } from '../utils/AppError.js';
 
 dotenv.config();
 
-const SALT_ROUNDS = 10;
+export class AuthService {
+  #usuarioModel;
+  #saltRounds;
+  #jwtSecret;
+  #jwtExpiresIn;
+  #defaultRol;
 
-const generateToken = (usuario) => {
-  const payload = {
-    id: usuario.id,
-    correo: usuario.correo,
-    rol: usuario.rol
-  };
+  constructor(usuarioModelInstance = usuarioModel || new UsuarioModel()) {
+    this.#usuarioModel = usuarioModelInstance;
+    this.#saltRounds = 10;
+    this.#jwtSecret = process.env.JWT_SECRET || 'clave_secreta_por_defecto';
+    this.#jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
+    this.#defaultRol = 'usuario';
+  }
 
-  return jwt.sign(payload, process.env.JWT_SECRET || 'clave_secreta_por_defecto', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
-  });
-};
+  #generateToken(usuario) {
+    const payload = {
+      id: usuario.id,
+      correo: usuario.correo,
+      rol: usuario.rol
+    };
 
-export const AuthService = {
+    return jwt.sign(payload, this.#jwtSecret, {
+      expiresIn: this.#jwtExpiresIn
+    });
+  }
+
+  async #hashPassword(contrasena) {
+    return bcrypt.hash(contrasena, this.#saltRounds);
+  }
+
+  async #verifyPassword(contrasena, contrasenaHash) {
+    return bcrypt.compare(contrasena, contrasenaHash);
+  }
+
+  #formatPublicUser(usuario) {
+    return {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      rol: usuario.rol,
+      fecha_creacion: usuario.fecha_creacion,
+      fecha_actualizacion: usuario.fecha_actualizacion
+    };
+  }
+
   async register({ nombre, correo, contrasena }) {
-    const existingUser = await UsuarioModel.findByEmail(correo);
+    const existingUser = await this.#usuarioModel.findByEmail(correo);
     if (existingUser) {
       throw new AppError('El correo electronico ya se encuentra registrado.', 409);
     }
 
-    const contrasenaHash = await bcrypt.hash(contrasena, SALT_ROUNDS);
+    const contrasenaHash = await this.#hashPassword(contrasena);
 
     try {
-      const nuevoUsuario = await UsuarioModel.create({
+      const nuevoUsuario = await this.#usuarioModel.create({
         nombre,
         correo,
         contrasenaHash,
-        rol: 'usuario'
+        rol: this.#defaultRol
       });
 
-      const token = generateToken(nuevoUsuario);
+      const token = this.#generateToken(nuevoUsuario);
 
       return {
         usuario: nuevoUsuario,
@@ -49,35 +80,29 @@ export const AuthService = {
       }
       throw error;
     }
-  },
+  }
 
   async login({ correo, contrasena }) {
-    const usuario = await UsuarioModel.findByEmail(correo);
+    const usuario = await this.#usuarioModel.findByEmail(correo);
     if (!usuario) {
       throw new AppError('Credenciales invalidas: correo o contrasena incorrectos.', 401);
     }
 
-    const isPasswordValid = await bcrypt.compare(contrasena, usuario.contrasena_hash);
+    const isPasswordValid = await this.#verifyPassword(contrasena, usuario.contrasena_hash);
     if (!isPasswordValid) {
       throw new AppError('Credenciales invalidas: correo o contrasena incorrectos.', 401);
     }
 
-    const usuarioPublico = {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      correo: usuario.correo,
-      rol: usuario.rol,
-      fecha_creacion: usuario.fecha_creacion,
-      fecha_actualizacion: usuario.fecha_actualizacion
-    };
-
-    const token = generateToken(usuarioPublico);
+    const usuarioPublico = this.#formatPublicUser(usuario);
+    const token = this.#generateToken(usuarioPublico);
 
     return {
       usuario: usuarioPublico,
       token
     };
   }
-};
+}
+
+export const authService = new AuthService();
 
 export default AuthService;

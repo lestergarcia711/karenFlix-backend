@@ -1,44 +1,69 @@
-import { AuthService } from '../services/auth.service.js';
+import { AuthService, authService } from '../services/auth.service.js';
 
-export const register = async (req, res, next) => {
-  try {
-    const { nombre, correo, contrasena } = req.body;
-    const resultado = await AuthService.register({ nombre, correo, contrasena });
+export class AuthController {
+  #authService;
 
-    res.status(201).json({
-      ok: true,
-      message: 'Usuario registrado exitosamente.',
-      data: resultado
-    });
-  } catch (error) {
-    next(error);
+  constructor(authServiceInstance = authService || new AuthService()) {
+    this.#authService = authServiceInstance;
+
+    this.register = this.register.bind(this);
+    this.login = this.login.bind(this);
+    this.getProfile = this.getProfile.bind(this);
   }
-};
 
-export const login = async (req, res, next) => {
-  try {
-    const { correo, contrasena } = req.body;
-    const resultado = await AuthService.login({ correo, contrasena });
-
-    res.status(200).json({
-      ok: true,
-      message: 'Inicio de sesion exitoso.',
-      data: resultado
-    });
-  } catch (error) {
-    next(error);
+  #sendSuccess(res, statusCode, data, message = null) {
+    const payload = { ok: true };
+    if (message) {
+      payload.message = message;
+    }
+    payload.data = data;
+    return res.status(statusCode).json(payload);
   }
-};
 
-export const getProfile = async (req, res, next) => {
-  try {
-    res.status(200).json({
-      ok: true,
-      data: {
+  async register(req, res, next) {
+    try {
+      const { nombre, correo, contrasena } = req.body;
+      const resultado = await this.#authService.register({ nombre, correo, contrasena });
+
+      return this.#sendSuccess(
+        res,
+        201,
+        resultado,
+        'Usuario registrado exitosamente.'
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async login(req, res, next) {
+    try {
+      const { correo, contrasena } = req.body;
+      const resultado = await this.#authService.login({ correo, contrasena });
+
+      return this.#sendSuccess(
+        res,
+        200,
+        resultado,
+        'Inicio de sesion exitoso.'
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async getProfile(req, res, next) {
+    try {
+      return this.#sendSuccess(res, 200, {
         usuario: req.user
-      }
-    });
-  } catch (error) {
-    next(error);
+      });
+    } catch (error) {
+      return next(error);
+    }
   }
-};
+}
+
+export const authController = new AuthController();
+export const { register, login, getProfile } = authController;
+
+export default AuthController;

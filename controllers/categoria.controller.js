@@ -1,79 +1,100 @@
-import { CategoriaService } from '../services/categoria.service.js';
+import { CategoriaService, categoriaService } from '../services/categoria.service.js';
 
-export const getAllCategories = async (_req, res, next) => {
-  try {
-    const categorias = await CategoriaService.getAllCategories();
-    res.status(200).json({
-      ok: true,
-      data: {
-        categorias
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+export class CategoriaController {
+  #categoriaService;
 
-export const getCategoryById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const categoria = await CategoriaService.getCategoryById(id);
-    res.status(200).json({
-      ok: true,
-      data: {
-        categoria
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  constructor(categoriaServiceInstance = categoriaService || new CategoriaService()) {
+    this.#categoriaService = categoriaServiceInstance;
 
-export const createCategory = async (req, res, next) => {
-  try {
-    const { nombre, descripcion } = req.body;
-    const categoria = await CategoriaService.createCategory({ nombre, descripcion });
-    res.status(201).json({
-      ok: true,
-      message: 'Categoria creada exitosamente.',
-      data: {
-        categoria
-      }
-    });
-  } catch (error) {
-    next(error);
+    this.getAllCategories = this.getAllCategories.bind(this);
+    this.getCategoryById = this.getCategoryById.bind(this);
+    this.createCategory = this.createCategory.bind(this);
+    this.updateCategory = this.updateCategory.bind(this);
+    this.deleteCategory = this.deleteCategory.bind(this);
   }
-};
 
-export const updateCategory = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { nombre, descripcion } = req.body;
-    const categoria = await CategoriaService.updateCategory(id, { nombre, descripcion });
-    res.status(200).json({
-      ok: true,
-      message: 'Categoria actualizada exitosamente.',
-      data: {
-        categoria
-      }
-    });
-  } catch (error) {
-    next(error);
+  #sendSuccess(res, statusCode, data, message = null) {
+    const payload = { ok: true };
+    if (message) {
+      payload.message = message;
+    }
+    payload.data = data;
+    return res.status(statusCode).json(payload);
   }
-};
 
-export const deleteCategory = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const categoria = await CategoriaService.deleteCategory(id);
-    res.status(200).json({
-      ok: true,
-      message: 'Categoria eliminada exitosamente.',
-      data: {
-        categoria
-      }
-    });
-  } catch (error) {
-    next(error);
+  async getAllCategories(_req, res, next) {
+    try {
+      const categorias = await this.#categoriaService.getAllCategories();
+      return this.#sendSuccess(res, 200, { categorias });
+    } catch (error) {
+      return next(error);
+    }
   }
-};
+
+  async getCategoryById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const categoria = await this.#categoriaService.getCategoryById(id);
+      return this.#sendSuccess(res, 200, { categoria });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async createCategory(req, res, next) {
+    try {
+      const { nombre, descripcion } = req.body;
+      const categoria = await this.#categoriaService.createCategory({ nombre, descripcion });
+      return this.#sendSuccess(
+        res,
+        201,
+        { categoria },
+        'Categoria creada exitosamente.'
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async updateCategory(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { nombre, descripcion } = req.body;
+      const categoria = await this.#categoriaService.updateCategory(id, { nombre, descripcion });
+      return this.#sendSuccess(
+        res,
+        200,
+        { categoria },
+        'Categoria actualizada exitosamente.'
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async deleteCategory(req, res, next) {
+    try {
+      const { id } = req.params;
+      const categoria = await this.#categoriaService.deleteCategory(id);
+      return this.#sendSuccess(
+        res,
+        200,
+        { categoria },
+        'Categoria eliminada exitosamente.'
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+}
+
+export const categoriaController = new CategoriaController();
+export const {
+  getAllCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} = categoriaController;
+
+export default CategoriaController;

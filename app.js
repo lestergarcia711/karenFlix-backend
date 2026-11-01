@@ -2,56 +2,117 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import semver from 'semver';
-import { testConnection } from './config/db.js';
-import passport from './config/passport.js';
-import { apiRateLimiter } from './middlewares/rateLimiter.middleware.js';
-import { notFoundHandler, errorHandler } from './middlewares/error.middleware.js';
-import indexRoutes from './routes/index.routes.js';
+import { Database, database } from './config/db.js';
+import { PassportConfig, passportConfig } from './config/passport.js';
+import { RateLimiterMiddleware, rateLimiterMiddleware } from './middlewares/rateLimiter.middleware.js';
+import { ErrorMiddleware, errorMiddleware } from './middlewares/error.middleware.js';
+import { IndexRoutes, indexRoutes } from './routes/index.routes.js';
 
 dotenv.config();
 
-const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-const API_VERSION = semver.valid(semver.coerce(process.env.API_VERSION || '1.0.0')) || '1.0.0';
-const API_MAJOR = semver.major(API_VERSION);
+export class Server {
+  #app;
+  #port;
+  #apiVersion;
+  #apiMajor;
+  #corsOrigin;
+  #database;
+  #passportConfig;
+  #rateLimiterMiddleware;
+  #errorMiddleware;
+  #indexRoutes;
 
-// Configuracion de CORS
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-app.use(cors(corsOptions));
+  constructor({
+    databaseInstance = database || new Database(),
+    passportConfigInstance = passportConfig || new PassportConfig(),
+    rateLimiterInstance = rateLimiterMiddleware || new RateLimiterMiddleware(),
+    errorMiddlewareInstance = errorMiddleware || new ErrorMiddleware(),
+    indexRoutesInstance = indexRoutes || new IndexRoutes()
+  } = {}) {
+    this.#app = express();
+    this.#port = Number(process.env.PORT) || 3000;
+    this.#apiVersion = this.#resolveApiVersion(process.env.API_VERSION);
+    this.#apiMajor = semver.major(this.#apiVersion);
+    this.#corsOrigin = process.env.CORS_ORIGIN || '*';
 
-// Limitador de peticiones global (express-rate-limit)
-app.use(apiRateLimiter);
+    this.#database = databaseInstance;
+    this.#passportConfig = passportConfigInstance;
+    this.#rateLimiterMiddleware = rateLimiterInstance;
+    this.#errorMiddleware = errorMiddlewareInstance;
+    this.#indexRoutes = indexRoutesInstance;
 
-// Parseo del cuerpo de las peticiones
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Inicializacion de Passport (JWT)
-app.use(passport.initialize());
-
-// Rutas base versionadas con semver
-app.use(`/api/v${API_MAJOR}`, indexRoutes);
-
-// Manejo de rutas no encontradas y errores centralizados
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-const startServer = async () => {
-  try {
-    await testConnection();
-  } catch (error) {
-    console.warn(`Advertencia al conectar a MySQL: ${error.message}`);
+    this.#configureMiddlewares();
+    this.#configureRoutes();
+    this.#configureErrorHandling();
   }
 
-  app.listen(PORT, () => {
-    console.log(`Servidor KarenFlix (v${API_VERSION}) ejecutandose en http://localhost:${PORT}/api/v${API_MAJOR}`);
-  });
-};
+  #resolveApiVersion(rawVersion = '1.0.0') {
+    return semver.valid(semver.coerce(rawVersion || '1.0.0')) || '1.0.0';
+  }
 
-startServer();
+  #buildCorsOptions() {
+    return {
+      origin: this.#corsOrigin,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    };
+  }
+
+  #configureMiddlewares() {
+    // Configuracion de CORS
+    this.#app.use(cors(this.#buildCorsOptions()));
+
+    // Limitador de peticiones global (express-rate-limit)
+    this.#app.use(this.#rateLimiterMiddleware.getMiddleware());
+
+    // Parseo del cuerpo de las peticiones
+    this.#app.use(express.json());
+    this.#app.use(express.urlencoded({ extended: true }));
+
+    // Inicializacion de Passport (JWT)
+    this.#app.use(this.#passportConfig.initialize());
+  }
+
+  #configureRoutes() {
+    // Rutas base versionadas con semver
+    this.#app.use(`/api/v${this.#apiMajor}`, this.#indexRoutes.getRouter());
+  }
+
+  #configureErrorHandling() {
+    // Manejo de rutas no encontradas y errores centralizados
+    this.#app.use(this.#errorMiddleware.notFoundHandler);
+    this.#app.use(this.#errorMiddleware.errorHandler);
+  }
+
+  async #connectDatabase() {
+    try {
+      await this.#database.testConnection();
+    } catch (error) {
+      console.warn(`Advertencia al conectar a MySQL: ${error.message}`);
+    }
+  }
+
+  async start() {
+    await this.#connectDatabase();
+
+    return this.#app.listen(this.#port, () => {
+      console.log(
+        `Servidor KarenFlix (v${this.#apiVersion}) ejecutandose en http://localhost:${this.#port}/api/v${this.#apiMajor}`
+      );
+      console.log(
+        `Documentacion Swagger disponible en http://localhost:${this.#port}/api/v${this.#apiMajor}/docs`
+      );
+    });
+  }
+
+  getApp() {
+    return this.#app;
+  }
+}
+
+export const server = new Server();
+const app = server.getApp();
+
+server.start();
 
 export default app;

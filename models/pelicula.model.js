@@ -1,7 +1,21 @@
 import pool from '../config/db.js';
 
-export const PeliculaModel = {
-  async findAllApproved({ categoria_id = null, tipo = null, busqueda = null, orden = 'recientes' } = {}) {
+export class PeliculaModel {
+  #pool;
+  #defaultTipo;
+  #estadoInicial;
+  #defaultLimit;
+  #maxLimit;
+
+  constructor(dbPool = pool) {
+    this.#pool = dbPool;
+    this.#defaultTipo = 'pelicula';
+    this.#estadoInicial = 'pendiente';
+    this.#defaultLimit = 20;
+    this.#maxLimit = 100;
+  }
+
+  #buildApprovedQuery({ categoria_id = null, tipo = null, busqueda = null, orden = 'recientes' }) {
     let query = `
       SELECT 
         p.id,
@@ -54,24 +68,10 @@ export const PeliculaModel = {
       query += ` ORDER BY p.fecha_creacion DESC`;
     }
 
-    const [rows] = await pool.execute(query, params);
-    return rows;
-  },
+    return { query, params };
+  }
 
-  async findRanking({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
-    const peliculas = await this.findAllApproved({
-      categoria_id,
-      orden: orden === 'popularidad' ? 'popularidad' : 'ranking'
-    });
-
-    const limitNum = Math.min(Math.max(Number(limite) || 20, 1), 100);
-    return peliculas.slice(0, limitNum).map((pelicula, index) => ({
-      posicion: index + 1,
-      ...pelicula
-    }));
-  },
-
-  async findAllForAdmin(estado = null) {
+  #buildAdminQuery(estado = null) {
     let query = `
       SELECT 
         p.id,
@@ -107,12 +107,54 @@ export const PeliculaModel = {
 
     query += ` ORDER BY p.fecha_creacion DESC`;
 
-    const [rows] = await pool.execute(query, params);
+    return { query, params };
+  }
+
+  #sanitizeLimit(limite) {
+    return Math.min(Math.max(Number(limite) || this.#defaultLimit, 1), this.#maxLimit);
+  }
+
+  #formatRankingResults(peliculas, limitNum) {
+    return peliculas.slice(0, limitNum).map((pelicula, index) => ({
+      posicion: index + 1,
+      ...pelicula
+    }));
+  }
+
+  #getFirstRowOrNull(rows) {
+    return rows[0] || null;
+  }
+
+  async findAllApproved({ categoria_id = null, tipo = null, busqueda = null, orden = 'recientes' } = {}) {
+    const { query, params } = this.#buildApprovedQuery({
+      categoria_id,
+      tipo,
+      busqueda,
+      orden
+    });
+
+    const [rows] = await this.#pool.execute(query, params);
     return rows;
-  },
+  }
+
+  async findRanking({ orden = 'ranking', categoria_id = null, limite = 20 } = {}) {
+    const peliculas = await this.findAllApproved({
+      categoria_id,
+      orden: orden === 'popularidad' ? 'popularidad' : 'ranking'
+    });
+
+    const limitNum = this.#sanitizeLimit(limite);
+    return this.#formatRankingResults(peliculas, limitNum);
+  }
+
+  async findAllForAdmin(estado = null) {
+    const { query, params } = this.#buildAdminQuery(estado);
+    const [rows] = await this.#pool.execute(query, params);
+    return rows;
+  }
 
   async findById(id) {
-    const [rows] = await pool.execute(
+    const [rows] = await this.#pool.execute(
       `SELECT 
          p.id,
          p.titulo,
@@ -141,32 +183,32 @@ export const PeliculaModel = {
        LIMIT 1`,
       [id]
     );
-    return rows[0] || null;
-  },
+    return this.#getFirstRowOrNull(rows);
+  }
 
   async findByTitle(titulo) {
-    const [rows] = await pool.execute(
+    const [rows] = await this.#pool.execute(
       `SELECT id, titulo, estado
        FROM peliculas
        WHERE LOWER(titulo) = LOWER(?)
        LIMIT 1`,
       [titulo.trim()]
     );
-    return rows[0] || null;
-  },
+    return this.#getFirstRowOrNull(rows);
+  }
 
   async create({
     titulo,
     descripcion,
-    tipo = 'pelicula',
+    tipo,
     categoria_id,
     anio,
     imagen_url = null,
     creado_por
   }) {
-    const estadoInicial = 'pendiente';
+    const tipoFinal = tipo || this.#defaultTipo;
 
-    const [result] = await pool.execute(
+    const [result] = await this.#pool.execute(
       `INSERT INTO peliculas (
          titulo,
          descripcion,
@@ -181,30 +223,30 @@ export const PeliculaModel = {
       [
         titulo,
         descripcion,
-        tipo,
+        tipoFinal,
         categoria_id,
         anio,
         imagen_url,
-        estadoInicial,
+        this.#estadoInicial,
         creado_por
       ]
     );
 
     return this.findById(result.insertId);
-  },
+  }
 
   async updateStatus(id, { estado, revisado_por }) {
-    await pool.execute(
+    await this.#pool.execute(
       `UPDATE peliculas
        SET estado = ?, revisado_por = ?, fecha_revision = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [estado, revisado_por, id]
     );
     return this.findById(id);
-  },
+  }
 
   async update(id, { titulo, descripcion, tipo, categoria_id, anio, imagen_url }) {
-    await pool.execute(
+    await this.#pool.execute(
       `UPDATE peliculas
        SET titulo = ?,
            descripcion = ?,
@@ -216,16 +258,18 @@ export const PeliculaModel = {
       [titulo, descripcion, tipo, categoria_id, anio, imagen_url, id]
     );
     return this.findById(id);
-  },
+  }
 
   async remove(id) {
-    const [result] = await pool.execute(
+    const [result] = await this.#pool.execute(
       `DELETE FROM peliculas
        WHERE id = ?`,
       [id]
     );
     return result.affectedRows;
   }
-};
+}
+
+export const peliculaModel = new PeliculaModel();
 
 export default PeliculaModel;
