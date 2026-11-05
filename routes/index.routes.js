@@ -6,6 +6,7 @@ import authRoutes from './auth.routes.js';
 import categoriaRoutes from './categoria.routes.js';
 import peliculaRoutes from './pelicula.routes.js';
 import resenaRoutes from './resena.routes.js';
+import usuarioRoutes from './usuario.routes.js';
 
 export class IndexRoutes {
   #router;
@@ -18,12 +19,14 @@ export class IndexRoutes {
   #categoriaRouter;
   #peliculaRouter;
   #resenaRouter;
+  #usuarioRouter;
 
   constructor(
     authRouterInstance = authRoutes,
     categoriaRouterInstance = categoriaRoutes,
     peliculaRouterInstance = peliculaRoutes,
-    resenaRouterInstance = resenaRoutes
+    resenaRouterInstance = resenaRoutes,
+    usuarioRouterInstance = usuarioRoutes
   ) {
     this.#router = Router();
     this.#serviceName = 'KarenFlix Backend API';
@@ -35,6 +38,7 @@ export class IndexRoutes {
     this.#categoriaRouter = categoriaRouterInstance;
     this.#peliculaRouter = peliculaRouterInstance;
     this.#resenaRouter = resenaRouterInstance;
+    this.#usuarioRouter = usuarioRouterInstance;
 
     this.#initializeRoutes();
   }
@@ -60,7 +64,7 @@ export class IndexRoutes {
   }
 
   #initializeRoutes() {
-    // Documentacion interactiva Swagger (HU-16) en /api/v1/docs
+    // Documentacion interactiva Swagger en /api/v1/docs
     this.#router.use('/docs', swaggerUi.serve, swaggerUi.setup(this.#swaggerSpec));
 
     this.#router.get('/health', (req, res) => this.#handleHealthCheck(req, res));
@@ -68,6 +72,7 @@ export class IndexRoutes {
     this.#router.use('/categorias', this.#categoriaRouter);
     this.#router.use('/peliculas', this.#peliculaRouter);
     this.#router.use('/resenas', this.#resenaRouter);
+    this.#router.use('/usuarios', this.#usuarioRouter);
   }
 
   getRouter() {
