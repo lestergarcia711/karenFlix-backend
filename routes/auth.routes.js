@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { AuthController, authController } from '../controllers/auth.controller.js';
-import { ValidationMiddleware, validationMiddleware } from '../middlewares/validation.middleware.js';
-import { AuthMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
+import { authController } from '../controllers/auth.controller.js';
+import { validationMiddleware } from '../middlewares/validation.middleware.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 export class AuthRoutes {
   #router;
@@ -10,9 +10,9 @@ export class AuthRoutes {
   #authMiddleware;
 
   constructor(
-    authControllerInstance = authController || new AuthController(),
-    validationMiddlewareInstance = validationMiddleware || new ValidationMiddleware(),
-    authMiddlewareInstance = authMiddleware || new AuthMiddleware()
+    authControllerInstance = authController,
+    validationMiddlewareInstance = validationMiddleware,
+    authMiddlewareInstance = authMiddleware
   ) {
     this.#router = Router();
     this.#authController = authControllerInstance;

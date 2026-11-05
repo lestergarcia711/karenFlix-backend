@@ -1,6 +1,6 @@
 import { body, param, query, validationResult } from 'express-validator';
 import { AppError } from '../utils/AppError.js';
-import { PeliculaModel, peliculaModel } from '../models/pelicula.model.js';
+import { peliculaModel } from '../models/pelicula.model.js';
 
 export class ValidationMiddleware {
   #peliculaModel;
@@ -11,7 +11,7 @@ export class ValidationMiddleware {
   #minAnio;
   #maxAnio;
 
-  constructor(peliculaModelInstance = peliculaModel || new PeliculaModel()) {
+  constructor(peliculaModelInstance = peliculaModel) {
     this.#peliculaModel = peliculaModelInstance;
     this.#tiposValidos = ['pelicula', 'serie', 'anime'];
     this.#ordenesValidos = ['ranking', 'popularidad', 'recientes'];
@@ -273,18 +273,5 @@ export class ValidationMiddleware {
 }
 
 export const validationMiddleware = new ValidationMiddleware();
-export const handleValidationErrors = validationMiddleware.handleValidationErrors;
-export const validateRegister = validationMiddleware.getRegisterValidator();
-export const validateLogin = validationMiddleware.getLoginValidator();
-export const validateCategoryId = validationMiddleware.getCategoryIdValidator();
-export const validateCategory = validationMiddleware.getCategoryValidator();
-export const validatePelicula = validationMiddleware.getPeliculaValidator();
-export const validatePeliculaId = validationMiddleware.getPeliculaIdValidator();
-export const validatePeliculaStatus = validationMiddleware.getPeliculaStatusValidator();
-export const validateUpdatePelicula = validationMiddleware.getUpdatePeliculaValidator();
-export const validateResenaId = validationMiddleware.getResenaIdValidator();
-export const validateResena = validationMiddleware.getResenaValidator();
-export const validateReaccion = validationMiddleware.getReaccionValidator();
-export const validatePeliculaQuery = validationMiddleware.getPeliculaQueryValidator();
 
 export default ValidationMiddleware;

@@ -1,14 +1,12 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import semver from 'semver';
-import { Database, database } from './config/db.js';
-import { PassportConfig, passportConfig } from './config/passport.js';
-import { RateLimiterMiddleware, rateLimiterMiddleware } from './middlewares/rateLimiter.middleware.js';
-import { ErrorMiddleware, errorMiddleware } from './middlewares/error.middleware.js';
-import { IndexRoutes, indexRoutes } from './routes/index.routes.js';
-
-dotenv.config();
+import { database } from './config/db.js';
+import { passportConfig } from './config/passport.js';
+import { rateLimiterMiddleware } from './middlewares/rateLimiter.middleware.js';
+import { errorMiddleware } from './middlewares/error.middleware.js';
+import { indexRoutes } from './routes/index.routes.js';
 
 export class Server {
   #app;
@@ -23,11 +21,11 @@ export class Server {
   #indexRoutes;
 
   constructor({
-    databaseInstance = database || new Database(),
-    passportConfigInstance = passportConfig || new PassportConfig(),
-    rateLimiterInstance = rateLimiterMiddleware || new RateLimiterMiddleware(),
-    errorMiddlewareInstance = errorMiddleware || new ErrorMiddleware(),
-    indexRoutesInstance = indexRoutes || new IndexRoutes()
+    databaseInstance = database,
+    passportConfigInstance = passportConfig,
+    rateLimiterInstance = rateLimiterMiddleware,
+    errorMiddlewareInstance = errorMiddleware,
+    indexRoutesInstance = indexRoutes
   } = {}) {
     this.#app = express();
     this.#port = Number(process.env.PORT) || 3000;

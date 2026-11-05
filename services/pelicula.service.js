@@ -1,6 +1,6 @@
-import { PeliculaModel, peliculaModel } from '../models/pelicula.model.js';
-import { CategoriaModel, categoriaModel } from '../models/categoria.model.js';
-import { ResenaModel, resenaModel } from '../models/resena.model.js';
+import { peliculaModel } from '../models/pelicula.model.js';
+import { categoriaModel } from '../models/categoria.model.js';
+import { resenaModel } from '../models/resena.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export class PeliculaService {
@@ -13,9 +13,9 @@ export class PeliculaService {
   #defaultTipo;
 
   constructor(
-    peliculaModelInstance = peliculaModel || new PeliculaModel(),
-    categoriaModelInstance = categoriaModel || new CategoriaModel(),
-    resenaModelInstance = resenaModel || new ResenaModel()
+    peliculaModelInstance = peliculaModel,
+    categoriaModelInstance = categoriaModel,
+    resenaModelInstance = resenaModel
   ) {
     this.#peliculaModel = peliculaModelInstance;
     this.#categoriaModel = categoriaModelInstance;

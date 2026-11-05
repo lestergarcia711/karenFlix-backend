@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { PeliculaController, peliculaController } from '../controllers/pelicula.controller.js';
-import { ResenaController, resenaController } from '../controllers/resena.controller.js';
-import { AuthMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
-import { ValidationMiddleware, validationMiddleware } from '../middlewares/validation.middleware.js';
+import { peliculaController } from '../controllers/pelicula.controller.js';
+import { resenaController } from '../controllers/resena.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { validationMiddleware } from '../middlewares/validation.middleware.js';
 
 export class PeliculaRoutes {
   #router;
@@ -13,10 +13,10 @@ export class PeliculaRoutes {
   #adminRole;
 
   constructor(
-    peliculaControllerInstance = peliculaController || new PeliculaController(),
-    resenaControllerInstance = resenaController || new ResenaController(),
-    authMiddlewareInstance = authMiddleware || new AuthMiddleware(),
-    validationMiddlewareInstance = validationMiddleware || new ValidationMiddleware()
+    peliculaControllerInstance = peliculaController,
+    resenaControllerInstance = resenaController,
+    authMiddlewareInstance = authMiddleware,
+    validationMiddlewareInstance = validationMiddleware
   ) {
     this.#router = Router();
     this.#peliculaController = peliculaControllerInstance;

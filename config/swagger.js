@@ -533,7 +533,4 @@ export class SwaggerConfig {
   }
 }
 
-export const buildSwaggerSpec = (apiVersion = '1.0.0', apiMajor = 1) =>
-  new SwaggerConfig(apiVersion, apiMajor).getSpec();
-
-export default buildSwaggerSpec;
+export default SwaggerConfig;

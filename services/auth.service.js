@@ -1,10 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import { UsuarioModel, usuarioModel } from '../models/usuario.model.js';
+import { usuarioModel } from '../models/usuario.model.js';
 import { AppError } from '../utils/AppError.js';
-
-dotenv.config();
 
 export class AuthService {
   #usuarioModel;
@@ -13,7 +10,7 @@ export class AuthService {
   #jwtExpiresIn;
   #defaultRol;
 
-  constructor(usuarioModelInstance = usuarioModel || new UsuarioModel()) {
+  constructor(usuarioModelInstance = usuarioModel) {
     this.#usuarioModel = usuarioModelInstance;
     this.#saltRounds = 10;
     this.#jwtSecret = process.env.JWT_SECRET || 'clave_secreta_por_defecto';

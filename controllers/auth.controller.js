@@ -1,9 +1,9 @@
-import { AuthService, authService } from '../services/auth.service.js';
+import { authService } from '../services/auth.service.js';
 
 export class AuthController {
   #authService;
 
-  constructor(authServiceInstance = authService || new AuthService()) {
+  constructor(authServiceInstance = authService) {
     this.#authService = authServiceInstance;
 
     this.register = this.register.bind(this);
@@ -64,6 +64,5 @@ export class AuthController {
 }
 
 export const authController = new AuthController();
-export const { register, login, getProfile } = authController;
 
 export default AuthController;

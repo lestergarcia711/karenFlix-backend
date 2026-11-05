@@ -1,7 +1,4 @@
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 export class RateLimiterMiddleware {
   #windowMs;
@@ -38,6 +35,5 @@ export class RateLimiterMiddleware {
 }
 
 export const rateLimiterMiddleware = new RateLimiterMiddleware();
-export const apiRateLimiter = rateLimiterMiddleware.getMiddleware();
 
-export default apiRateLimiter;
+export default RateLimiterMiddleware;

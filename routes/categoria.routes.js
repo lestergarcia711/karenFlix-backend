@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { CategoriaController, categoriaController } from '../controllers/categoria.controller.js';
-import { AuthMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
-import { ValidationMiddleware, validationMiddleware } from '../middlewares/validation.middleware.js';
+import { categoriaController } from '../controllers/categoria.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { validationMiddleware } from '../middlewares/validation.middleware.js';
 
 export class CategoriaRoutes {
   #router;
@@ -11,9 +11,9 @@ export class CategoriaRoutes {
   #adminRole;
 
   constructor(
-    categoriaControllerInstance = categoriaController || new CategoriaController(),
-    authMiddlewareInstance = authMiddleware || new AuthMiddleware(),
-    validationMiddlewareInstance = validationMiddleware || new ValidationMiddleware()
+    categoriaControllerInstance = categoriaController,
+    authMiddlewareInstance = authMiddleware,
+    validationMiddlewareInstance = validationMiddleware
   ) {
     this.#router = Router();
     this.#categoriaController = categoriaControllerInstance;

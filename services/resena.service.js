@@ -1,5 +1,5 @@
-import { ResenaModel, resenaModel } from '../models/resena.model.js';
-import { PeliculaModel, peliculaModel } from '../models/pelicula.model.js';
+import { resenaModel } from '../models/resena.model.js';
+import { peliculaModel } from '../models/pelicula.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export class ResenaService {
@@ -8,8 +8,8 @@ export class ResenaService {
   #estadoAprobada;
 
   constructor(
-    resenaModelInstance = resenaModel || new ResenaModel(),
-    peliculaModelInstance = peliculaModel || new PeliculaModel()
+    resenaModelInstance = resenaModel,
+    peliculaModelInstance = peliculaModel
   ) {
     this.#resenaModel = resenaModelInstance;
     this.#peliculaModel = peliculaModelInstance;

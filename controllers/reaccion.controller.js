@@ -1,10 +1,10 @@
-import { ReaccionService, reaccionService } from '../services/reaccion.service.js';
+import { reaccionService } from '../services/reaccion.service.js';
 
 export class ReaccionController {
   #reaccionService;
   #mensajesPorAccion;
 
-  constructor(reaccionServiceInstance = reaccionService || new ReaccionService()) {
+  constructor(reaccionServiceInstance = reaccionService) {
     this.#reaccionService = reaccionServiceInstance;
     this.#mensajesPorAccion = {
       creada: 'Reaccion registrada exitosamente.',
@@ -72,6 +72,5 @@ export class ReaccionController {
 }
 
 export const reaccionController = new ReaccionController();
-export const { reactToResena, removeReaction } = reaccionController;
 
 export default ReaccionController;

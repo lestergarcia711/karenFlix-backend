@@ -1,9 +1,9 @@
-import { ResenaService, resenaService } from '../services/resena.service.js';
+import { resenaService } from '../services/resena.service.js';
 
 export class ResenaController {
   #resenaService;
 
-  constructor(resenaServiceInstance = resenaService || new ResenaService()) {
+  constructor(resenaServiceInstance = resenaService) {
     this.#resenaService = resenaServiceInstance;
 
     this.getResenasByPelicula = this.getResenasByPelicula.bind(this);
@@ -98,11 +98,5 @@ export class ResenaController {
 }
 
 export const resenaController = new ResenaController();
-export const {
-  getResenasByPelicula,
-  createResena,
-  updateResena,
-  deleteResena
-} = resenaController;
 
 export default ResenaController;

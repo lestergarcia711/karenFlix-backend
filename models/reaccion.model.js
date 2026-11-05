@@ -1,11 +1,11 @@
 import pool from '../config/db.js';
-import { ResenaModel } from './resena.model.js';
+import { resenaModel } from './resena.model.js';
 
 export class ReaccionModel {
   #pool;
   #resenaModel;
 
-  constructor(dbPool = pool, resenaModelInstance = new ResenaModel(dbPool)) {
+  constructor(dbPool = pool, resenaModelInstance = resenaModel) {
     this.#pool = dbPool;
     this.#resenaModel = resenaModelInstance;
   }

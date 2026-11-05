@@ -1,10 +1,10 @@
-import { CategoriaModel, categoriaModel } from '../models/categoria.model.js';
+import { categoriaModel } from '../models/categoria.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export class CategoriaService {
   #categoriaModel;
 
-  constructor(categoriaModelInstance = categoriaModel || new CategoriaModel()) {
+  constructor(categoriaModelInstance = categoriaModel) {
     this.#categoriaModel = categoriaModelInstance;
   }
 

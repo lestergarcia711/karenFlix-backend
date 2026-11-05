@@ -50,6 +50,5 @@ export class ErrorMiddleware {
 }
 
 export const errorMiddleware = new ErrorMiddleware();
-export const { notFoundHandler, errorHandler } = errorMiddleware;
 
 export default ErrorMiddleware;

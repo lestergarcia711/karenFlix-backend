@@ -1,9 +1,9 @@
-import { PeliculaService, peliculaService } from '../services/pelicula.service.js';
+import { peliculaService } from '../services/pelicula.service.js';
 
 export class PeliculaController {
   #peliculaService;
 
-  constructor(peliculaServiceInstance = peliculaService || new PeliculaService()) {
+  constructor(peliculaServiceInstance = peliculaService) {
     this.#peliculaService = peliculaServiceInstance;
 
     this.getApprovedPeliculas = this.getApprovedPeliculas.bind(this);
@@ -179,15 +179,5 @@ export class PeliculaController {
 }
 
 export const peliculaController = new PeliculaController();
-export const {
-  getApprovedPeliculas,
-  getRankingPeliculas,
-  getPeliculaById,
-  getPeliculasForAdmin,
-  createPelicula,
-  reviewPelicula,
-  updatePelicula,
-  deletePelicula
-} = peliculaController;
 
 export default PeliculaController;

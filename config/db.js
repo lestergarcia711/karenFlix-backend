@@ -1,7 +1,4 @@
 import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 export class Database {
   #config;
@@ -53,8 +50,5 @@ export class Database {
 }
 
 export const database = new Database();
-const pool = database.getPool();
 
-export const testConnection = () => database.testConnection();
-
-export default pool;
+export default database.getPool();

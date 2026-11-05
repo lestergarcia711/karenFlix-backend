@@ -1,16 +1,13 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import dotenv from 'dotenv';
-import { UsuarioModel } from '../models/usuario.model.js';
-
-dotenv.config();
+import { usuarioModel } from '../models/usuario.model.js';
 
 export class PassportConfig {
   #passport;
   #usuarioModel;
   #jwtSecret;
 
-  constructor(passportInstance = passport, usuarioModelInstance = new UsuarioModel()) {
+  constructor(passportInstance = passport, usuarioModelInstance = usuarioModel) {
     this.#passport = passportInstance;
     this.#usuarioModel = usuarioModelInstance;
     this.#jwtSecret = process.env.JWT_SECRET || 'clave_secreta_por_defecto';

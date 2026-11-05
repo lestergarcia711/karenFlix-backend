@@ -53,7 +53,7 @@ export class IndexRoutes {
     res.status(200).json({
       ok: true,
       service: this.#serviceName,
-      version: this.#resolveValidVersion(),
+      version: this.#apiVersion,
       status: 'online',
       timestamp: new Date().toISOString()
     });

@@ -1,9 +1,9 @@
-import { CategoriaService, categoriaService } from '../services/categoria.service.js';
+import { categoriaService } from '../services/categoria.service.js';
 
 export class CategoriaController {
   #categoriaService;
 
-  constructor(categoriaServiceInstance = categoriaService || new CategoriaService()) {
+  constructor(categoriaServiceInstance = categoriaService) {
     this.#categoriaService = categoriaServiceInstance;
 
     this.getAllCategories = this.getAllCategories.bind(this);
@@ -89,12 +89,5 @@ export class CategoriaController {
 }
 
 export const categoriaController = new CategoriaController();
-export const {
-  getAllCategories,
-  getCategoryById,
-  createCategory,
-  updateCategory,
-  deleteCategory
-} = categoriaController;
 
 export default CategoriaController;

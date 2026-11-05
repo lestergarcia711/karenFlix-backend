@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { ResenaController, resenaController } from '../controllers/resena.controller.js';
-import { ReaccionController, reaccionController } from '../controllers/reaccion.controller.js';
-import { AuthMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
-import { ValidationMiddleware, validationMiddleware } from '../middlewares/validation.middleware.js';
+import { resenaController } from '../controllers/resena.controller.js';
+import { reaccionController } from '../controllers/reaccion.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { validationMiddleware } from '../middlewares/validation.middleware.js';
 
 export class ResenaRoutes {
   #router;
@@ -12,10 +12,10 @@ export class ResenaRoutes {
   #validationMiddleware;
 
   constructor(
-    resenaControllerInstance = resenaController || new ResenaController(),
-    reaccionControllerInstance = reaccionController || new ReaccionController(),
-    authMiddlewareInstance = authMiddleware || new AuthMiddleware(),
-    validationMiddlewareInstance = validationMiddleware || new ValidationMiddleware()
+    resenaControllerInstance = resenaController,
+    reaccionControllerInstance = reaccionController,
+    authMiddlewareInstance = authMiddleware,
+    validationMiddlewareInstance = validationMiddleware
   ) {
     this.#router = Router();
     this.#resenaController = resenaControllerInstance;

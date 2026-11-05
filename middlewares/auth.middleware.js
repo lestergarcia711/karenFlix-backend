@@ -65,6 +65,5 @@ export class AuthMiddleware {
 }
 
 export const authMiddleware = new AuthMiddleware();
-export const { authenticateJWT, authorizeRoles } = authMiddleware;
 
 export default AuthMiddleware;

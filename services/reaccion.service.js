@@ -1,5 +1,5 @@
-import { ReaccionModel, reaccionModel } from '../models/reaccion.model.js';
-import { ResenaModel, resenaModel } from '../models/resena.model.js';
+import { reaccionModel } from '../models/reaccion.model.js';
+import { resenaModel } from '../models/resena.model.js';
 import { AppError } from '../utils/AppError.js';
 
 export class ReaccionService {
@@ -7,8 +7,8 @@ export class ReaccionService {
   #resenaModel;
 
   constructor(
-    reaccionModelInstance = reaccionModel || new ReaccionModel(),
-    resenaModelInstance = resenaModel || new ResenaModel()
+    reaccionModelInstance = reaccionModel,
+    resenaModelInstance = resenaModel
   ) {
     this.#reaccionModel = reaccionModelInstance;
     this.#resenaModel = resenaModelInstance;
