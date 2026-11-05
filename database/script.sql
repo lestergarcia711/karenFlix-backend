@@ -83,3 +83,21 @@ CREATE TABLE IF NOT EXISTS reacciones_resenas(
   CONSTRAINT fk_reacciones_resena FOREIGN KEY(resena_id) REFERENCES resenas(id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_reacciones_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ON UPDATE CASCADE
 )ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS historial(
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_id INT UNSIGNED NOT NULL,
+  pelicula_id INT UNSIGNED NULL,
+  resena_id INT UNSIGNED NULL,
+  tipo_accion ENUM('registro','edicion','eliminacion') NOT NULL,
+  resena_titulo VARCHAR(100) NULL,
+  calificacion TINYINT UNSIGNED NULL,
+  descripcion VARCHAR(255) NOT NULL,
+  fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(id),
+  CONSTRAINT fk_historial_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_historial_pelicula FOREIGN KEY(pelicula_id) REFERENCES peliculas(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_historial_resena FOREIGN KEY(resena_id) REFERENCES resenas(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_historial_usuario_fecha(usuario_id, fecha_creacion),
+  INDEX idx_historial_tipo_accion(tipo_accion)
+)ENGINE=InnoDB;
