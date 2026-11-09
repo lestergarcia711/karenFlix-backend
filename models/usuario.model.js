@@ -19,6 +19,15 @@ export class UsuarioModel {
     return rol || this.#defaultRol;
   }
 
+  async findAll() {
+    const [rows] = await this.#pool.execute(
+      `SELECT id, nombre, correo, rol, fecha_creacion, fecha_actualizacion
+       FROM ${this.#tableName}
+       ORDER BY fecha_creacion DESC`
+    );
+    return rows;
+  }
+
   async findByEmail(correo) {
     const [rows] = await this.#pool.execute(
       `SELECT id, nombre, correo, contrasena_hash, rol, fecha_creacion, fecha_actualizacion
@@ -52,13 +61,13 @@ export class UsuarioModel {
     return this.findById(result.insertId);
   }
 
-  async findAll() {
-    const [rows] = await this.#pool.execute(
-      `SELECT id, nombre, correo, rol, fecha_creacion, fecha_actualizacion
-       FROM ${this.#tableName}
-       ORDER BY fecha_creacion DESC`
+  async remove(id) {
+    const [result] = await this.#pool.execute(
+      `DELETE FROM ${this.#tableName}
+       WHERE id = ?`,
+      [id]
     );
-    return rows;
+    return result.affectedRows;
   }
 
   async getUserActivity(usuario_id) {

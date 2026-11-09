@@ -7,6 +7,8 @@ export class UsuarioController {
     this.#usuarioService = usuarioServiceInstance;
 
     this.getAllUsers = this.getAllUsers.bind(this);
+    this.getUserById = this.getUserById.bind(this);
+    this.deleteUser = this.deleteUser.bind(this);
     this.getMyActivity = this.getMyActivity.bind(this);
     this.getSystemStats = this.getSystemStats.bind(this);
   }
@@ -33,6 +35,31 @@ export class UsuarioController {
     try {
       const usuarios = await this.#usuarioService.getAllUsers();
       return this.#sendSuccess(res, 200, { total: usuarios.length, usuarios });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async getUserById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const usuario = await this.#usuarioService.getUserById(id);
+      return this.#sendSuccess(res, 200, { usuario });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async deleteUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      const usuario = await this.#usuarioService.deleteUser(id, req.user.id);
+      return this.#sendSuccess(
+        res,
+        200,
+        { usuario },
+        'Usuario eliminado exitosamente.'
+      );
     } catch (error) {
       return next(error);
     }

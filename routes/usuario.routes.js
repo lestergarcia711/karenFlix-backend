@@ -2,23 +2,27 @@ import { Router } from 'express';
 import { usuarioController } from '../controllers/usuario.controller.js';
 import { historialController } from '../controllers/historial.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { validationMiddleware } from '../middlewares/validation.middleware.js';
 
 export class UsuarioRoutes {
   #router;
   #usuarioController;
   #historialController;
   #authMiddleware;
+  #validationMiddleware;
   #adminRole;
 
   constructor(
     usuarioControllerInstance = usuarioController,
     historialControllerInstance = historialController,
-    authMiddlewareInstance = authMiddleware
+    authMiddlewareInstance = authMiddleware,
+    validationMiddlewareInstance = validationMiddleware
   ) {
     this.#router = Router();
     this.#usuarioController = usuarioControllerInstance;
     this.#historialController = historialControllerInstance;
     this.#authMiddleware = authMiddlewareInstance;
+    this.#validationMiddleware = validationMiddlewareInstance;
     this.#adminRole = 'administrador';
 
     this.#initializeRoutes();
@@ -53,6 +57,24 @@ export class UsuarioRoutes {
       this.#authMiddleware.authenticateJWT,
       this.#authMiddleware.authorizeRoles(this.#adminRole),
       this.#usuarioController.getAllUsers
+    );
+
+    // El admin puede consultar un usuario por su id
+    this.#router.get(
+      '/:id',
+      this.#authMiddleware.authenticateJWT,
+      this.#authMiddleware.authorizeRoles(this.#adminRole),
+      this.#validationMiddleware.getUsuarioIdValidator(),
+      this.#usuarioController.getUserById
+    );
+
+    // El admin puede eliminar un usuario por su id
+    this.#router.delete(
+      '/:id',
+      this.#authMiddleware.authenticateJWT,
+      this.#authMiddleware.authorizeRoles(this.#adminRole),
+      this.#validationMiddleware.getUsuarioIdValidator(),
+      this.#usuarioController.deleteUser
     );
   }
 
