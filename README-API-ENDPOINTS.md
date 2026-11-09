@@ -32,6 +32,8 @@ ADMIN_TOKEN="<token_de_administrador>"
 | POST | `/peliculas/:id/resenas` | Usuario | Crear reseña |
 | PUT, DELETE | `/resenas/:id` | Usuario (autor) | Editar o eliminar reseña propia |
 | POST, DELETE | `/resenas/:id/reacciones` | Usuario | Dar o quitar like o dislike |
+| GET | `/usuarios/mi-actividad` | Usuario | Ver mis títulos propuestos y mis reseñas |
+| GET | `/usuarios/historial` | Admin | Estadísticas e historial global del sistema |
 
 ## Ejemplos
 
@@ -139,6 +141,57 @@ curl -X POST "$BASE_URL/resenas/1/reacciones" \
 ```
 
 La respuesta indica `accion`: `creada`, `actualizada` (cambio de like a dislike o viceversa) o `eliminada` (se repitió la misma reacción).
+
+### Actividad y estadísticas de usuarios
+
+```bash
+# Ver mi actividad: películas propuestas y reseñas escritas (Usuario)
+curl -X GET "$BASE_URL/usuarios/mi-actividad" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Ver estadísticas generales del sistema (Admin)
+curl -X GET "$BASE_URL/usuarios/historial" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+Respuesta de `/usuarios/mi-actividad` (`200`):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "actividad": {
+      "total_peliculas_propuestas": 1,
+      "peliculas_propuestas": [
+        { "id": 1, "titulo": "Neon Genesis Evangelion", "tipo": "anime", "estado": "aprobada", "promedio_calificacion": "9.00", "total_resenas": 3, "fecha_creacion": "2026-11-05T14:20:00.000Z" }
+      ],
+      "total_resenas_escritas": 1,
+      "resenas_escritas": [
+        { "id": 1, "pelicula_id": 1, "pelicula_titulo": "Neon Genesis Evangelion", "titulo": "Una obra maestra", "comentario": "Intensa y memorable.", "calificacion": 10, "total_likes": 2, "total_dislikes": 0, "fecha_creacion": "2026-11-05T14:25:00.000Z" }
+      ]
+    }
+  }
+}
+```
+
+Respuesta de `/usuarios/historial` (`200`):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "historial": {
+      "total_usuarios": 4,
+      "total_categorias": 6,
+      "peliculas_aprobadas": 10,
+      "peliculas_pendientes": 2,
+      "peliculas_rechazadas": 1,
+      "total_resenas": 15,
+      "total_reacciones": 28
+    }
+  }
+}
+```
 
 ## Reglas principales
 
