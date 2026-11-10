@@ -32,6 +32,11 @@ ADMIN_TOKEN="<token_de_administrador>"
 | POST | `/peliculas/:id/resenas` | Usuario | Crear reseña |
 | PUT, DELETE | `/resenas/:id` | Usuario (autor) | Editar o eliminar reseña propia |
 | POST, DELETE | `/resenas/:id/reacciones` | Usuario | Dar o quitar like o dislike |
+| GET | `/usuarios/mi-actividad` | Usuario | Ver mis títulos propuestos y mis reseñas |
+| GET | `/usuarios/historial`, `/historial` | Usuario | Historial de acciones propio (`?tipo_accion=`, `?fecha=`) |
+| GET | `/usuarios/estadisticas` | Admin | Estadísticas globales del sistema |
+| GET | `/usuarios`, `/usuarios/:id` | Admin | Listar o consultar usuarios |
+| DELETE | `/usuarios/:id` | Admin | Eliminar un usuario |
 
 ## Ejemplos
 
@@ -139,6 +144,71 @@ curl -X POST "$BASE_URL/resenas/1/reacciones" \
 ```
 
 La respuesta indica `accion`: `creada`, `actualizada` (cambio de like a dislike o viceversa) o `eliminada` (se repitió la misma reacción).
+
+### Usuarios, actividad, historial y administración
+
+```bash
+# Ver mi actividad: películas propuestas y reseñas escritas (Usuario)
+curl -X GET "$BASE_URL/usuarios/mi-actividad" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Ver mi historial de acciones con filtros opcionales (Usuario)
+curl -X GET "$BASE_URL/usuarios/historial?tipo_accion=registro&orden=recientes" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Ver estadísticas globales del sistema (Admin)
+curl -X GET "$BASE_URL/usuarios/estadisticas" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# Listar todos los usuarios o consultar uno por ID (Admin)
+curl -X GET "$BASE_URL/usuarios" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+curl -X GET "$BASE_URL/usuarios/2" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# Eliminar un usuario por ID (Admin)
+curl -X DELETE "$BASE_URL/usuarios/2" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+Respuesta de `/usuarios/mi-actividad` (`200`):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "actividad": {
+      "total_peliculas_propuestas": 1,
+      "peliculas_propuestas": [
+        { "id": 1, "titulo": "Neon Genesis Evangelion", "tipo": "anime", "estado": "aprobada", "promedio_calificacion": "9.00", "total_resenas": 3, "fecha_creacion": "2026-11-05T14:20:00.000Z" }
+      ],
+      "total_resenas_escritas": 1,
+      "resenas_escritas": [
+        { "id": 1, "pelicula_id": 1, "pelicula_titulo": "Neon Genesis Evangelion", "titulo": "Una obra maestra", "comentario": "Intensa y memorable.", "calificacion": 10, "total_likes": 2, "total_dislikes": 0, "fecha_creacion": "2026-11-05T14:25:00.000Z" }
+      ]
+    }
+  }
+}
+```
+
+Respuesta de `/usuarios/estadisticas` (`200`):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "estadisticas": {
+      "total_usuarios": 4,
+      "total_categorias": 6,
+      "peliculas_aprobadas": 10,
+      "peliculas_pendientes": 2,
+      "peliculas_rechazadas": 1,
+      "total_resenas": 15,
+      "total_reacciones": 28
+    }
+  }
+}
+```
 
 ## Reglas principales
 

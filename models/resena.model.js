@@ -1,12 +1,15 @@
 import pool from '../config/db.js';
+import { historialModel } from './historial.model.js';
 
 export class ResenaModel {
   #pool;
+  #historialModel;
   #likeWeight;
   #recencyDaysWindow;
 
-  constructor(dbPool = pool) {
+  constructor(dbPool = pool, historialModelInstance = historialModel) {
     this.#pool = dbPool;
+    this.#historialModel = historialModelInstance;
     this.#likeWeight = 0.15;
     this.#recencyDaysWindow = 30.0;
   }
@@ -136,7 +139,19 @@ export class ResenaModel {
 
       await this.#updatePeliculaMetrics(connection, pelicula_id);
 
-      return this.findById(result.insertId, connection);
+      const nuevaResena = await this.findById(result.insertId, connection);
+
+      await this.#historialModel.createWithConnection(connection, {
+        usuario_id,
+        pelicula_id,
+        resena_id: nuevaResena.id,
+        tipo_accion: 'registro',
+        resena_titulo: nuevaResena.titulo,
+        calificacion: nuevaResena.calificacion,
+        descripcion: `Registro de resena "${nuevaResena.titulo}" (${nuevaResena.calificacion}/10) en "${nuevaResena.pelicula_titulo}"`
+      });
+
+      return nuevaResena;
     });
   }
 
@@ -153,12 +168,26 @@ export class ResenaModel {
 
       await this.#updatePeliculaMetrics(connection, resenaActual.pelicula_id);
 
-      return this.findById(id, connection);
+      const resenaActualizada = await this.findById(id, connection);
+
+      await this.#historialModel.createWithConnection(connection, {
+        usuario_id: resenaActualizada.usuario_id,
+        pelicula_id: resenaActualizada.pelicula_id,
+        resena_id: resenaActualizada.id,
+        tipo_accion: 'edicion',
+        resena_titulo: resenaActualizada.titulo,
+        calificacion: resenaActualizada.calificacion,
+        descripcion: `Edicion de resena "${resenaActualizada.titulo}" (${resenaActualizada.calificacion}/10) en "${resenaActualizada.pelicula_titulo}"`
+      });
+
+      return resenaActualizada;
     });
   }
 
   async removeWithTransaction(id, pelicula_id) {
     return this.#executeTransaction(async (connection) => {
+      const resenaActual = await this.findById(id, connection);
+
       await connection.execute(
         `DELETE FROM resenas
          WHERE id = ?`,
@@ -166,6 +195,18 @@ export class ResenaModel {
       );
 
       await this.#updatePeliculaMetrics(connection, pelicula_id);
+
+      if (resenaActual) {
+        await this.#historialModel.createWithConnection(connection, {
+          usuario_id: resenaActual.usuario_id,
+          pelicula_id: resenaActual.pelicula_id,
+          resena_id: null,
+          tipo_accion: 'eliminacion',
+          resena_titulo: resenaActual.titulo,
+          calificacion: resenaActual.calificacion,
+          descripcion: `Eliminacion de resena "${resenaActual.titulo}" (${resenaActual.calificacion}/10) en "${resenaActual.pelicula_titulo}"`
+        });
+      }
     });
   }
 }

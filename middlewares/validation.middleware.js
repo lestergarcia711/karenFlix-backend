@@ -152,6 +152,16 @@ export class ValidationMiddleware {
     ];
   }
 
+  getUsuarioIdValidator() {
+    return [
+      param('id')
+        .isInt({ min: 1 })
+        .withMessage('El identificador del usuario debe ser un numero entero positivo.')
+        .toInt(),
+      this.handleValidationErrors
+    ];
+  }
+
   getCategoryValidator() {
     return [
       body('nombre')
